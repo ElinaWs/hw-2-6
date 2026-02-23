@@ -9,40 +9,45 @@ function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingPosts, setLoadingPosts] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const response = await fetch(
-        "https://jsonplaceholder.typicode.com/users"
-      );
-      const data: User[] = await response.json();
-      setUsers(data);
-    };
-
-    fetchUsers();
+    fetch("https://jsonplaceholder.typicode.com/users")
+      .then((response) => response.json())
+      .then((json: User[]) => {
+        setUsers(json);
+      });
   }, []);
 
-  const fetchPosts = async (userId: number) => {
-    setLoading(true);
-    const response = await fetch(
+  const handleSelectUser = (userId: number) => {
+    setLoadingPosts(true);
+
+    fetch(
       `https://jsonplaceholder.typicode.com/posts?userId=${userId}`
-    );
-    const data: Post[] = await response.json();
-    setPosts(data);
-    setSelectedUserId(userId);
-    setLoading(false);
+    )
+      .then((response) => response.json())
+      .then((json: Post[]) => {
+        setPosts(json);
+        setSelectedUserId(userId);
+      })
+      .finally(() => {
+        setLoadingPosts(false);
+      });
   };
 
   return (
     <div className="container">
       <h1>Users & Posts</h1>
 
-      <UserList users={users} onUserSelect={fetchPosts} />
+      <UserList
+        users={users}
+        selectedUserId={selectedUserId}
+        onSelectUser={handleSelectUser}
+      />
 
-      {loading && <p>Loading posts...</p>}
+      {loadingPosts && <p className="loading">Loading posts...</p>}
 
-      {selectedUserId && !loading && <PostList posts={posts} />}
+      {selectedUserId && !loadingPosts && <PostList posts={posts} />}
     </div>
   );
 }

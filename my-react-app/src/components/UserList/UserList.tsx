@@ -3,14 +3,24 @@ import { UserCard } from "../UserCard/UserCard"
 
 interface UserListProps {
   users: User[];
-  onUserSelect: (id: number) => void;
+  selectedUserId: number | null;
+  onSelectUser: (id: number) => void;
 }
 
-export const UserList = ({ users, onUserSelect }: UserListProps) => {
+export const UserList = ({
+  users,
+  selectedUserId,
+  onSelectUser,
+}: UserListProps) => {
   return (
     <div className="user-list">
       {users.map((user) => (
-        <UserCard key={user.id} user={user} onClick={onUserSelect} />
+        <UserCard
+          key={user.id}
+          user={user}
+          isActive={user.id === selectedUserId}
+          onSelect={onSelectUser}
+        />
       ))}
     </div>
   );
