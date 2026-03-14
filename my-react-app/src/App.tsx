@@ -1,43 +1,51 @@
 import { useEffect, useState } from "react"
-import { User } from "./types/user"
-import { Post } from "./types/post"
+import type { User } from "./types/user"
+import type { Post } from "./types/post"
 import { UserList } from "./components/UserList/UserList"
 import { PostList } from "./components/PostList/PostList"
+import { axiosApi } from './axiosApi';
 import "./index.css"
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [loadingPosts, setLoadingPosts] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/users")
-      .then((response) => response.json())
-      .then((json: User[]) => {
-        setUsers(json);
-      });
+    const loadUsers = async () => {
+      try {
+        const response = await axiosApi.get<User[]>('/users');
+        setUsers(response.data);
+      } catch (err) {
+        console.error('Loading error', err);
+        setError('User error');
+      }
+    };
+
+    loadUsers();
   }, []);
+        
+  const handleSelectUser = async (userId: number) => {
+    if (userId === selectedUserId) return;
+    setError(null);
 
-  const handleSelectUser = (userId: number) => {
-    setLoadingPosts(true);
-
-    fetch(
-      `https://jsonplaceholder.typicode.com/posts?userId=${userId}`
-    )
-      .then((response) => response.json())
-      .then((json: Post[]) => {
-        setPosts(json);
-        setSelectedUserId(userId);
-      })
-      .finally(() => {
-        setLoadingPosts(false);
+    try {
+      const response = await axiosApi.get<Post[]>('/posts', {
+        params: { userId },
       });
+      setPosts(response.data);
+      setSelectedUserId(userId);
+    } catch (err) {
+      setError('Post error'); 
+    }
   };
 
   return (
     <div className="container">
       <h1>Users & Posts</h1>
+
+      {error && <p className="error">{error}</p>}
 
       <UserList
         users={users}
@@ -45,9 +53,7 @@ function App() {
         onSelectUser={handleSelectUser}
       />
 
-      {loadingPosts && <p className="loading">Loading posts...</p>}
-
-      {selectedUserId && !loadingPosts && <PostList posts={posts} />}
+      {selectedUserId !== null && <PostList posts={posts} />}
     </div>
   );
 }
